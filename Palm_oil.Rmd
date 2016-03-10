@@ -1,0 +1,74 @@
+---
+title: "Palm_oil"
+author: "Agnes M"
+date: "29 février 2016"
+output: html_document
+---
+
+Let's find something about palm oil.
+First we have to load the data. You can find the data on [Kaggle](https://www.kaggle.com/openfoodfacts/world-food-facts)
+
+```{r, load the data, echo = F, cache = TRUE}
+path_data_food_facts <- "~/0R/world-food-facts/FoodFacts.csv"
+data_food_facts <- read.csv(path_data_food_facts, na.strings = c("NA",""," "))
+```
+
+Data Food Facts is a french initiative. Most of the products are consume in France. I will take into acount these products. 
+
+```{r, french products, cache=TRUE, results='hide'}
+library(dplyr)
+tbl_food_france <- 
+        data_food_facts%>%
+        tbl_df()%>%
+        filter(grepl("France", data_food_facts$countries_en) == TRUE)
+```
+
+That is the summary of the percentage of NA's by column. 
+
+```{r, nas1, cache = TRUE}
+summary(colMeans(is.na(tbl_food_france))*100)
+```
+
+I will kept the variables which contain less than 50% of NA's
+
+```{r, cleaning}
+tbl_food_france <- tbl_food_france[, colMeans(is.na(tbl_food_france)) < 0.5]
+```
+
+That's much better, no ? 
+
+```{r, nas2, echo=FALSE, cache = TRUE}
+summary(colMeans(is.na(tbl_food_france))*100)
+```
+
+I will choose some of them. I create a new data frame called nutrition.
+
+```{r, new df, message = FALSE}
+library(dplyr)
+nutrition <- 
+        tbl_food_france %>% select(8,10, contains("100g"), contains("oil"), contains("nutrition"))
+names(nutrition)
+```
+
+There are two nutrition scores, one from France and one from the UK. Are they different ?
+Ca sert a rien ça 
+
+```{r, nut scores, cache = TRUE, echo = FALSE}
+library(ggplot2)
+library(gridExtra)
+i <- qplot(nutrition_score_fr_100g, data = nutrition) + 
+        geom_vline(xintercept = mean(nutrition$nutrition_score_fr_100g, na.rm = T), 
+                   color = "red", size = 1) +
+        geom_vline(xintercept = median(nutrition$nutrition_score_fr_100g, na.rm = T), 
+                   color = "blue", size = 1)
+
+j <- qplot(nutrition_score_uk_100g, data = nutrition) + 
+        geom_vline(xintercept = mean(nutrition$nutrition_score_uk_100g, na.rm = T), 
+                   color = "red", size = 1) +
+        geom_vline(xintercept = median(nutrition$nutrition_score_fr_100g, na.rm = T), 
+                   color = "blue", size = 1)
+
+grid.arrange(i,j, nrow = 2)
+```
+
+
